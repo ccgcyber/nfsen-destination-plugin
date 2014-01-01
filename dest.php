@@ -20,7 +20,16 @@ function dest_ParseInput( $plugin_id ) {
         SetMessage('error', "Error set by demo plugin!");
         SetMessage('warning', "Warning set by demo plugin!");
         SetMessage('alert', "Alert set by demo plugin!");
-        SetMessage('info', "Info set by demo plugin!");
+	SetMessage('info', "Info set by demo plugin!");
+	if(isset($_POST["submit_start_end"] )) {
+		$opts = array();
+		$opts['start'] = $_POST['start'];
+		$opts['end'] = $_POST['end'];
+		$out_list = nfsend_query("dest::create_graph", $opts);
+		SetMessage('info', "POST is set");
+	} else {
+		SetMessage('info', "POST is not set");
+	}
 
 } // End of dest_ParseInput
 
@@ -32,8 +41,14 @@ function dest_ParseInput( $plugin_id ) {
  * Its return value is ignored.
  */
 function dest_Run( $plugin_id ) {
+	echo '
+		<form method="post" action="/nfsen/nfsen.php"  >
+		Start date: <input type="date" name="start" value="2014-01-01"/>
+		End date: <input type="date" name="end" value="2014-01-01"  />
+		<input type="submit" name="submit_start_end" />
+		</form>
 
-        // your code here
+		';
 
 } // End of dest_Run
 

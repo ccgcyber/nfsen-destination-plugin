@@ -5,9 +5,34 @@ package dest;
 #
 ## highly recommended for good style Perl programming
 use strict;
+use Sys::Syslog;
+use Sys::Syslog qw(:standard :macros);
+
 #
 ## This string identifies the plugin as a version 1.3.0 plugin.
 our $VERSION = 130;
+
+our % cmd_lookup = (
+	"create_graph" => \&CreateGraph,
+);
+
+
+sub CreateGraph {
+        my      $socket = shift;
+        my      $opts = shift;
+       
+	my $start_date = $$opts{'start'};
+	my $end_date = $$opts{'end'};	
+	
+        syslog("info", "CREATE GRAPH RAN");
+	my %args;
+        Nfcomm::socket_send_ok ($socket, \%args);
+	syslog("info", "LUHMAO");
+	syslog("info", $start_date.$end_date);
+	return 1;
+}
+
+
 #
 ##
 ## The Init function is called when the plugin is loaded. It's purpose is to give the plugin 
