@@ -31,21 +31,21 @@ sub CreateGraph {
         syslog("info", "CREATE GRAPH RAN");
 	my %args;
         Nfcomm::socket_send_ok ($socket, \%args);
-	syslog("info", "LUHMAO");
-	syslog("info", $start_date.$end_date);
 	my @nfdump_output = `$nfdump_command`;
-	foreach my $i (@nfdump_output) {
-		my @ip_address_and_freq = split(" ", $i);
+	foreach my $a_line (@nfdump_output) {
+		my @ip_address_and_freq = split(" ", $a_line);
 		my $arr_size = @ip_address_and_freq;
-		if ($arr_size == 2) {
-			my $ip_address = @ip_address_and_freq[0];
-			my $host_name = gethostbyaddr(inet_aton($ip_address), AF_INET);
-			my $frequency = @ip_address_and_freq[1];
-			if (defined $host_name and $host_name ne "") {
-			}
+		if ($arr_size != 2) { 
+			next;
 		}
+		my $ip_address = @ip_address_and_freq[0];
+		my $host_name = gethostbyaddr(inet_aton($ip_address), AF_INET);
+		my $frequency = @ip_address_and_freq[1];
+		if (not defined $host_name or $host_name eq "") {
+			$host_name = $ip_address; 
+		}
+		syslog("info", $ip_address. " -> " .$host_name);
 	}
-	
 	return 1;
 }
 
