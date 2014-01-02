@@ -9,6 +9,7 @@ use warnings;
 use Socket;
 use Sys::Syslog;
 use Sys::Syslog qw(:standard :macros);
+use Data::Dumper;
 
 #
 ## This string identifies the plugin as a version 1.3.0 plugin.
@@ -31,6 +32,7 @@ sub CreateGraph {
 	my %args;
         Nfcomm::socket_send_ok ($socket, \%args);
 	my @nfdump_output = `$nfdump_command`;
+	my %domain_name_to_bytes;
 	foreach my $a_line (@nfdump_output) {
 		my @ip_address_and_freq = split(" ", $a_line);
 		my $arr_size = @ip_address_and_freq;
@@ -49,8 +51,13 @@ sub CreateGraph {
 				$host_name = @sub_domains[-2].".".@sub_domains[-1];
 			} 
 		}
-		syslog("info", $ip_address. " -> " .$host_name);
+		if(exists $domain_name_to_bytes{$host_name}) {
+			$domain_name_to_bytes{$host_name} += $frequency;
+		} else {
+			$domain_name_to_bytes{$host_name} = $frequency;
+		}
 	}
+	syslog("info", "HASH: " . Dumper(\%domain_name_to_bytes));
 	return 1;
 }
 
