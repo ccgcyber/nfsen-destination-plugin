@@ -57,7 +57,14 @@ sub CreateGraph {
 			$domain_name_to_bytes{$host_name} = $frequency;
 		}
 	}
-	syslog("info", "HASH: " . Dumper(\%domain_name_to_bytes));
+	my $topNDomains = 10;
+	foreach my $domain_name (sort { $domain_name_to_bytes{$b} <=> $domain_name_to_bytes{$a} } keys %domain_name_to_bytes) {
+		syslog("info", $domain_name ." " . $domain_name_to_bytes{$domain_name});
+		$topNDomains -= 1;
+		if($topNDomains == 0) {
+			last;
+		}
+    	}
 	return 1;
 }
 
