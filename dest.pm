@@ -5,6 +5,8 @@ package dest;
 #
 ## highly recommended for good style Perl programming
 use strict;
+use warnings;
+use Socket;
 use Sys::Syslog;
 use Sys::Syslog qw(:standard :macros);
 
@@ -23,12 +25,27 @@ sub CreateGraph {
        
 	my $start_date = $$opts{'start'};
 	my $end_date = $$opts{'end'};	
-	
+
+	my $nfdump_command = "nfdump -M /data/nfsen/profiles-data/live/upstream1  -T  -R 2014/01/01/nfcapd.201401011235:2014/01/01/nfcapd.201401011625 -n 100 -s ip/bytes -N -o csv -q | awk 'BEGIN { FS = \",\" } ; { if (NR > 1) print \$5, \$10 }'";
+
         syslog("info", "CREATE GRAPH RAN");
 	my %args;
         Nfcomm::socket_send_ok ($socket, \%args);
 	syslog("info", "LUHMAO");
 	syslog("info", $start_date.$end_date);
+	my @nfdump_output = `$nfdump_command`;
+	foreach my $i (@nfdump_output) {
+		my @ip_address_and_freq = split(" ", $i);
+		my $arr_size = @ip_address_and_freq;
+		if ($arr_size == 2) {
+			my $ip_address = @ip_address_and_freq[0];
+			my $host_name = gethostbyaddr(inet_aton($ip_address), AF_INET);
+			my $frequency = @ip_address_and_freq[1];
+			if (defined $host_name and $host_name ne "") {
+			}
+		}
+	}
+	
 	return 1;
 }
 
