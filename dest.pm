@@ -28,7 +28,6 @@ sub CreateGraph {
 
 	my $nfdump_command = "nfdump -M /data/nfsen/profiles-data/live/upstream1  -T  -R 2014/01/01/nfcapd.201401011235:2014/01/01/nfcapd.201401011625 -n 100 -s ip/bytes -N -o csv -q | awk 'BEGIN { FS = \",\" } ; { if (NR > 1) print \$5, \$10 }'";
 
-        syslog("info", "CREATE GRAPH RAN");
 	my %args;
         Nfcomm::socket_send_ok ($socket, \%args);
 	my @nfdump_output = `$nfdump_command`;
@@ -43,6 +42,12 @@ sub CreateGraph {
 		my $frequency = @ip_address_and_freq[1];
 		if (not defined $host_name or $host_name eq "") {
 			$host_name = $ip_address; 
+		} else {
+			my @sub_domains = split(/\./, $host_name);
+			my $total_dots = scalar @sub_domains;
+			if($total_dots > 2) {
+				$host_name = @sub_domains[-2].".".@sub_domains[-1];
+			} 
 		}
 		syslog("info", $ip_address. " -> " .$host_name);
 	}
