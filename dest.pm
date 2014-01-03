@@ -44,17 +44,28 @@ sub CreateGraph {
 	$edate->add(days=>1);
 	my @dates_of_interest;
 
-	for(;DateTime->compare($sdate, $edate) == -1; $sdate->add(days=>1)) {
-		push @dates_of_interest, $sdate->clone();
+	for(my $curr_date = $sdate->clone(); DateTime->compare($curr_date, $edate) == -1; $curr_date->add(days=>1)) {
+		push @dates_of_interest, $curr_date->clone();
 	}
 
+	$edate->subtract(days=>1);
+	
 	syslog("info", join(", ", @dates_of_interest));
 
-	my $nfdump_command = "nfdump -M /data/nfsen/profiles-data/live/upstream1  -T  -R 2014/01/01/nfcapd.201401011235:2014/01/01/nfcapd.201401011625 -n 100 -s ip/bytes -N -o csv -q | awk 'BEGIN { FS = \",\" } ; { if (NR > 1) print \$5, \$10 }'";
+	my $syear = $sdate->year();
+	my $smonth = sprintf("%02d", $sdate->month());
+	my $sday = sprintf("%02d", $sdate->day());
+	my $eyear = $edate->year();
+	my $emonth = sprintf("%02d", $edate->month());
+	my $eday = sprintf("%02d", $edate->day());
+
+	my $nfdump_command = "nfdump -M /data/nfsen/profiles-data/live/upstream1  -T  -R ${syear}/${smonth}/${sday}/nfcapd.${syear}${smonth}${sday}0000:${eyear}/${emonth}/${eday}/nfcapd.${eyear}${emonth}${eday}2355 -n 100 -s ip/bytes -N -o csv -q | awk 'BEGIN { FS = \",\" } ; { if (NR > 1) print \$5, \$10 }'";
 
 	my %args;
         Nfcomm::socket_send_ok ($socket, \%args);
 	my @nfdump_output = `$nfdump_command`;
+	syslog("info", "INPUT: " . $nfdump_command);
+	syslog("info", "OUTPUT: " . join(", ", @nfdump_output));
 	my %domain_name_to_bytes;
 	my %domain_name_to_ip_addresses;
 
