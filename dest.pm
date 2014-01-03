@@ -33,6 +33,7 @@ sub CreateGraph {
         Nfcomm::socket_send_ok ($socket, \%args);
 	my @nfdump_output = `$nfdump_command`;
 	my %domain_name_to_bytes;
+
 	foreach my $a_line (@nfdump_output) {
 		my @ip_address_and_freq = split(" ", $a_line);
 		my $arr_size = @ip_address_and_freq;
@@ -61,9 +62,7 @@ sub CreateGraph {
 	foreach my $domain_name (sort { $domain_name_to_bytes{$b} <=> $domain_name_to_bytes{$a} } keys %domain_name_to_bytes) {
 		syslog("info", $domain_name ." " . $domain_name_to_bytes{$domain_name});
 		$topNDomains -= 1;
-		if($topNDomains == 0) {
-			last;
-		}
+		last if $topNDomains == 0;
     	}
 	return 1;
 }
