@@ -62,10 +62,8 @@ sub CreateGraph {
 	my $nfdump_command = "nfdump -M /data/nfsen/profiles-data/live/upstream1  -T  -R ${syear}/${smonth}/${sday}/nfcapd.${syear}${smonth}${sday}0000:${eyear}/${emonth}/${eday}/nfcapd.${eyear}${emonth}${eday}2355 -n 100 -s ip/bytes -N -o csv -q | awk 'BEGIN { FS = \",\" } ; { if (NR > 1) print \$5, \$10 }'";
 
 	my %args;
-        Nfcomm::socket_send_ok ($socket, \%args);
+	Nfcomm::socket_send_ok ($socket, \%args);
 	my @nfdump_output = `$nfdump_command`;
-	syslog("info", "INPUT: " . $nfdump_command);
-	syslog("info", "OUTPUT: " . join(", ", @nfdump_output));
 	my %domain_name_to_bytes;
 	my %domain_name_to_ip_addresses;
 
@@ -95,14 +93,24 @@ sub CreateGraph {
 		}
 	}
 	my $topNDomains = 10;
+	my %domain_to_array_of_bytes;
 	foreach my $domain_name (sort { $domain_name_to_bytes{$b} <=> $domain_name_to_bytes{$a} } keys %domain_name_to_bytes) {
 		my $ip_filter = join(" or ", @{$domain_name_to_ip_addresses{$domain_name}});
-		my $nfdump_command_to_get_bytes_for_a_date = "nfdump -M /data/nfsen/profiles-data/live/upstream1 -N -T  -R 2014/01/01/nfcapd.201401011235:2014/01/01/nfcapd.201401011625 -N -A dstip \"$ip_filter\"  -o csv |  awk 'BEGIN { FS = \",\" } ; {if( NR > 1)  s+=\$13 }; END {print s}'";
-		my $total_bytes = `$nfdump_command_to_get_bytes_for_a_date`;
-		syslog("info", $nfdump_command_to_get_bytes_for_a_date . "\n$total_bytes for $domain_name");
+		foreach my $date_point (@dates_of_interest) {
+			my $cyear = sprintf("%02d", $date_point->year());
+			my $cmonth = sprintf("%02d", $date_point->month());
+			my $cday = sprintf("%02d", $date_point->day());
+			my $nfdump_command = "nfdump -M /data/nfsen/profiles-data/live/upstream1 -N -T  -R ${cyear}/${cmonth}/${cday}/nfcapd.${cyear}${cmonth}${cday}0000:${cyear}/${cmonth}/${cday}/nfcapd.${cyear}${cmonth}${cday}2355 -N -A dstip \"$ip_filter\"  -o csv |  awk 'BEGIN { FS = \",\" } ; {if( NR > 1)  s+=\$13 }; END {print s}'";
+			syslog("info", $nfdump_command);
+			my $nfdump_output = `$nfdump_command`;
+			$nfdump_output = ~ s/^\s+|\s+$//g;
+			push @{$domain_to_array_of_bytes{$domain_name}}, $nfdump_output;
+		}
 		$topNDomains -= 1;
 		last if $topNDomains == 0;
     	}
+
+	syslog("info", Dumper(\%domain_to_array_of_bytes));
 	return 1;
 }
 
