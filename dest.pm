@@ -10,6 +10,7 @@ use Socket;
 use Sys::Syslog;
 use Sys::Syslog qw(:standard :macros);
 use Data::Dumper;
+use DateTime;
 
 #
 ## This string identifies the plugin as a version 1.3.0 plugin.
@@ -24,8 +25,30 @@ sub CreateGraph {
         my      $socket = shift;
         my      $opts = shift;
        
-	my $start_date = $$opts{'start'};
-	my $end_date = $$opts{'end'};	
+	my @start_date = split("-", $$opts{'start'});
+	my @end_date = split("-", $$opts{'end'});	
+
+	my $sdate = DateTime->new(
+		            year => @start_date[0],
+			       month => @start_date[1],
+				     day => @start_date[2],
+			  time_zone  => 'floating',
+				 );
+
+	my $edate = DateTime->new(
+		            year => @end_date[0],
+			       month => @end_date[1],
+				     day => @end_date[2],
+			  time_zone  => 'floating',
+	);
+	$edate->add(days=>1);
+	my @dates_of_interest;
+
+	for(;DateTime->compare($sdate, $edate) == -1; $sdate->add(days=>1)) {
+		push @dates_of_interest, $sdate->clone();
+	}
+
+	syslog("info", join(", ", @dates_of_interest));
 
 	my $nfdump_command = "nfdump -M /data/nfsen/profiles-data/live/upstream1  -T  -R 2014/01/01/nfcapd.201401011235:2014/01/01/nfcapd.201401011625 -n 100 -s ip/bytes -N -o csv -q | awk 'BEGIN { FS = \",\" } ; { if (NR > 1) print \$5, \$10 }'";
 
