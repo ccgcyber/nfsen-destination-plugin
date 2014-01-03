@@ -33,6 +33,7 @@ sub CreateGraph {
         Nfcomm::socket_send_ok ($socket, \%args);
 	my @nfdump_output = `$nfdump_command`;
 	my %domain_name_to_bytes;
+	my %domain_name_to_ip_addresses;
 
 	foreach my $a_line (@nfdump_output) {
 		my @ip_address_and_freq = split(" ", $a_line);
@@ -52,6 +53,7 @@ sub CreateGraph {
 				$host_name = @sub_domains[-2].".".@sub_domains[-1];
 			} 
 		}
+		push @{$domain_name_to_ip_addresses{$host_name}}, "dst ip " . $ip_address;
 		if(exists $domain_name_to_bytes{$host_name}) {
 			$domain_name_to_bytes{$host_name} += $frequency;
 		} else {
@@ -60,7 +62,10 @@ sub CreateGraph {
 	}
 	my $topNDomains = 10;
 	foreach my $domain_name (sort { $domain_name_to_bytes{$b} <=> $domain_name_to_bytes{$a} } keys %domain_name_to_bytes) {
-		syslog("info", $domain_name ." " . $domain_name_to_bytes{$domain_name});
+		my $ip_filter = join(" or ", @{$domain_name_to_ip_addresses{$domain_name}});
+		my $nfdump_command_to_get_bytes_for_a_date = "nfdump -M /data/nfsen/profiles-data/live/upstream1 -N -T  -R 2014/01/01/nfcapd.201401011235:2014/01/01/nfcapd.201401011625 -N -A dstip \"$ip_filter\"  -o csv |  awk 'BEGIN { FS = \",\" } ; {if( NR > 1)  s+=\$13 }; END {print s}'";
+		my $total_bytes = `$nfdump_command_to_get_bytes_for_a_date`;
+		syslog("info", $nfdump_command_to_get_bytes_for_a_date . "\n$total_bytes for $domain_name");
 		$topNDomains -= 1;
 		last if $topNDomains == 0;
     	}
