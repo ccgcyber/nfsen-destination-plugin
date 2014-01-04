@@ -62,7 +62,6 @@ sub CreateGraph {
 	my $nfdump_command = "/usr/local/bin/nfdump -M /data/nfsen/profiles-data/live/upstream1  -T  -R ${syear}/${smonth}/${sday}/nfcapd.${syear}${smonth}${sday}0000:${eyear}/${emonth}/${eday}/nfcapd.${eyear}${emonth}${eday}2355 -n 100 -s ip/bytes -N -o csv -q | awk 'BEGIN { FS = \",\" } ; { if (NR > 1) print \$5, \$10 }'";
 
 	my @nfdump_output = `$nfdump_command`;
-	syslog("info", "EXIT: $?");
 	syslog("info", Dumper(\@nfdump_output));
 	my %domain_name_to_bytes;
 	my %domain_name_to_ip_addresses;
@@ -101,9 +100,7 @@ sub CreateGraph {
 			my $cmonth = sprintf("%02d", $date_point->month());
 			my $cday = sprintf("%02d", $date_point->day());
 			my $nfdump_command = "/usr/local/bin/nfdump -M /data/nfsen/profiles-data/live/upstream1 -N -T  -R ${cyear}/${cmonth}/${cday}/nfcapd.${cyear}${cmonth}${cday}0000:${cyear}/${cmonth}/${cday}/nfcapd.${cyear}${cmonth}${cday}2355 -N -A dstip \"$ip_filter\"  -o csv |  awk 'BEGIN { FS = \",\" } ; {if( NR > 1)  s+=\$13 }; END {print s}'";
-			#syslog("info", $nfdump_command);
 			my $a_date_output = `$nfdump_command`;
-		#syslog("info", $a_date_output);
 			$a_date_output = trim($a_date_output);
 			push @{$domain_to_array_of_bytes{$domain_name}}, "$a_date_output";
 		}
