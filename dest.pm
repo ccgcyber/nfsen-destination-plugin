@@ -64,6 +64,8 @@ sub CreateGraph {
 	my %args;
 	Nfcomm::socket_send_ok ($socket, \%args);
 	my @nfdump_output = `$nfdump_command`;
+	syslog("info", "EXIT: $?");
+	syslog("info", Dumper(\@nfdump_output));
 	my %domain_name_to_bytes;
 	my %domain_name_to_ip_addresses;
 
