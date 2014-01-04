@@ -59,7 +59,7 @@ sub CreateGraph {
 	my $emonth = sprintf("%02d", $edate->month());
 	my $eday = sprintf("%02d", $edate->day());
 
-	my $nfdump_command = "nfdump -M /data/nfsen/profiles-data/live/upstream1  -T  -R ${syear}/${smonth}/${sday}/nfcapd.${syear}${smonth}${sday}0000:${eyear}/${emonth}/${eday}/nfcapd.${eyear}${emonth}${eday}2355 -n 100 -s ip/bytes -N -o csv -q | awk 'BEGIN { FS = \",\" } ; { if (NR > 1) print \$5, \$10 }'";
+	my $nfdump_command = "/usr/local/bin/nfdump -M /data/nfsen/profiles-data/live/upstream1  -T  -R ${syear}/${smonth}/${sday}/nfcapd.${syear}${smonth}${sday}0000:${eyear}/${emonth}/${eday}/nfcapd.${eyear}${emonth}${eday}2355 -n 100 -s ip/bytes -N -o csv -q | awk 'BEGIN { FS = \",\" } ; { if (NR > 1) print \$5, \$10 }'";
 
 	my %args;
 	Nfcomm::socket_send_ok ($socket, \%args);
@@ -102,7 +102,7 @@ sub CreateGraph {
 			my $cyear = sprintf("%02d", $date_point->year());
 			my $cmonth = sprintf("%02d", $date_point->month());
 			my $cday = sprintf("%02d", $date_point->day());
-			my $nfdump_command = "nfdump -M /data/nfsen/profiles-data/live/upstream1 -N -T  -R ${cyear}/${cmonth}/${cday}/nfcapd.${cyear}${cmonth}${cday}0000:${cyear}/${cmonth}/${cday}/nfcapd.${cyear}${cmonth}${cday}2355 -N -A dstip \"$ip_filter\"  -o csv |  awk 'BEGIN { FS = \",\" } ; {if( NR > 1)  s+=\$13 }; END {print s}'";
+			my $nfdump_command = "/usr/local/bin/nfdump -M /data/nfsen/profiles-data/live/upstream1 -N -T  -R ${cyear}/${cmonth}/${cday}/nfcapd.${cyear}${cmonth}${cday}0000:${cyear}/${cmonth}/${cday}/nfcapd.${cyear}${cmonth}${cday}2355 -N -A dstip \"$ip_filter\"  -o csv |  awk 'BEGIN { FS = \",\" } ; {if( NR > 1)  s+=\$13 }; END {print s}'";
 			syslog("info", $nfdump_command);
 			my $nfdump_output = `$nfdump_command`;
 			$nfdump_output = ~ s/^\s+|\s+$//g;
