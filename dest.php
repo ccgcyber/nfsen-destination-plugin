@@ -49,9 +49,9 @@ function dest_ParseInput( $plugin_id ) {
 				type: 'area'
 			},
 			title: {
-				text: 'Historic and Estimated Worldwide Population Growth by Region'						},
+				text: 'Top 10 domain destionations'						},
 			subtitle: {
-				text: 'Source: Wikipedia.org'
+				text: 'Source: top 100 ip addresses'
 			},
 			xAxis: {
 				categories: 	
