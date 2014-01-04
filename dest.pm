@@ -11,7 +11,7 @@ use Sys::Syslog;
 use Sys::Syslog qw(:standard :macros);
 use Data::Dumper;
 use DateTime;
-
+use String::Util 'trim';
 #
 ## This string identifies the plugin as a version 1.3.0 plugin.
 our $VERSION = 130;
@@ -75,9 +75,9 @@ sub CreateGraph {
 		if ($arr_size != 2) { 
 			next;
 		}
-		my $ip_address = @ip_address_and_freq[0];
+		my $ip_address = trim(@ip_address_and_freq[0]);
 		my $host_name = gethostbyaddr(inet_aton($ip_address), AF_INET);
-		my $frequency = @ip_address_and_freq[1];
+		my $frequency = trim(@ip_address_and_freq[1]);
 		if (not defined $host_name or $host_name eq "") {
 			$host_name = $ip_address; 
 		} else {
@@ -104,9 +104,10 @@ sub CreateGraph {
 			my $cday = sprintf("%02d", $date_point->day());
 			my $nfdump_command = "/usr/local/bin/nfdump -M /data/nfsen/profiles-data/live/upstream1 -N -T  -R ${cyear}/${cmonth}/${cday}/nfcapd.${cyear}${cmonth}${cday}0000:${cyear}/${cmonth}/${cday}/nfcapd.${cyear}${cmonth}${cday}2355 -N -A dstip \"$ip_filter\"  -o csv |  awk 'BEGIN { FS = \",\" } ; {if( NR > 1)  s+=\$13 }; END {print s}'";
 			syslog("info", $nfdump_command);
-			my $nfdump_output = `$nfdump_command`;
-			$nfdump_output = ~ s/^\s+|\s+$//g;
-			push @{$domain_to_array_of_bytes{$domain_name}}, $nfdump_output;
+			my $a_date_output = `$nfdump_command`;
+			syslog("info", $a_date_output);
+			$a_date_output = trim($a_date_output);
+			push @{$domain_to_array_of_bytes{$domain_name}}, "$a_date_output";
 		}
 		$topNDomains -= 1;
 		last if $topNDomains == 0;
