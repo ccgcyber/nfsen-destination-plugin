@@ -54,7 +54,7 @@ function dest_ParseInput( $plugin_id ) {
 				type: 'area'
 			},
 			title: {
-				text: 'Top 10 domain destionations'						},
+				text: 'Top 10 domain destinations'						},
 			subtitle: {
 				text: 'Source: Top 100 ip addresses'
 			},

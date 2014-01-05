@@ -54,8 +54,8 @@ sub CreateGraph {
 	my $emonth = sprintf("%02d", $edate->month());
 	my $eday = sprintf("%02d", $edate->day());
 
-	my $read = trim(`cat /tmp/nfsen_dest_plugin_ipc.txt 2>/dev/null`);
-	my $nfdump_command = "$NfConf::PREFIX/nfdump -M $read  -T  -R ${syear}/${smonth}/${sday}/nfcapd.${syear}${smonth}${sday}0000:${eyear}/${emonth}/${eday}/nfcapd.${eyear}${emonth}${eday}2355 -n 100 -s ip/bytes -N -o csv -q | awk 'BEGIN { FS = \",\" } ; { if (NR > 1) print \$5, \$10 }'";
+	my $netflow_sources = trim(`cat /tmp/nfsen_dest_plugin_ipc.txt 2>/dev/null`);
+	my $nfdump_command = "$NfConf::PREFIX/nfdump -M $netflow_sources  -T  -R ${syear}/${smonth}/${sday}/nfcapd.${syear}${smonth}${sday}0000:${eyear}/${emonth}/${eday}/nfcapd.${eyear}${emonth}${eday}2355 -n 100 -s ip/bytes -N -o csv -q | awk 'BEGIN { FS = \",\" } ; { if (NR > 1) print \$5, \$10 }'";
 	my @nfdump_output = `$nfdump_command`;
 	my %domain_name_to_bytes;
 	my %domain_name_to_ip_addresses;
@@ -66,9 +66,9 @@ sub CreateGraph {
 		if ($arr_size != 2) { 
 			next;
 		}
-		my $ip_address = trim(@ip_address_and_freq[0]);
+		my $ip_address = trim($ip_address_and_freq[0]);
 		my $host_name = gethostbyaddr(inet_aton($ip_address), AF_INET);
-		my $frequency = trim(@ip_address_and_freq[1]);
+		my $frequency = trim($ip_address_and_freq[1]);
 		if (not defined $host_name or $host_name eq "") {
 			$host_name = $ip_address; 
 		} else {
@@ -93,14 +93,14 @@ sub CreateGraph {
 			my $cyear = sprintf("%02d", $date_point->year());
 			my $cmonth = sprintf("%02d", $date_point->month());
 			my $cday = sprintf("%02d", $date_point->day());
-			my $nfdump_command = "$NfConf::PREFIX/nfdump -M $read -N -T  -R ${cyear}/${cmonth}/${cday}/nfcapd.${cyear}${cmonth}${cday}0000:${cyear}/${cmonth}/${cday}/nfcapd.${cyear}${cmonth}${cday}2355 -N -A dstip \"$ip_filter\"  -o csv |  awk 'BEGIN { FS = \",\" } ; {if( NR > 1)  s+=\$13 }; END {print s}'";
+			my $nfdump_command = "$NfConf::PREFIX/nfdump -M $netflow_sources -N -T  -R ${cyear}/${cmonth}/${cday}/nfcapd.${cyear}${cmonth}${cday}0000:${cyear}/${cmonth}/${cday}/nfcapd.${cyear}${cmonth}${cday}2355 -N -A dstip \"$ip_filter\"  -o csv |  awk 'BEGIN { FS = \",\" } ; {if( NR > 1)  s+=\$13 }; END {print s}'";
 			my $a_date_output = `$nfdump_command`;
 			$a_date_output = trim($a_date_output);
 			push @{$domain_to_array_of_bytes{$domain_name}}, "$a_date_output";
 		}
 		$topNDomains -= 1;
 		last if $topNDomains == 0;
-    	}
+    }
 
 	syslog("info", Dumper(\%domain_to_array_of_bytes));
 	Nfcomm::socket_send_ok ($socket, \%domain_to_array_of_bytes);
