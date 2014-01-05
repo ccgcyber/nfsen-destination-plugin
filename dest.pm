@@ -1,9 +1,6 @@
 #
-##
-## Name of the plugin
 package dest;
-#
-## highly recommended for good style Perl programming
+
 use strict;
 use warnings;
 use Socket;
@@ -12,9 +9,8 @@ use Sys::Syslog qw(:standard :macros);
 use Data::Dumper;
 use DateTime;
 use String::Util 'trim';
-#
-## This string identifies the plugin as a version 1.3.0 plugin.
-our $VERSION = 130;
+
+our $VERSION = 100;
 
 our % cmd_lookup = (
 	"create_graph" => \&CreateGraph,
@@ -59,7 +55,7 @@ sub CreateGraph {
 	my $emonth = sprintf("%02d", $edate->month());
 	my $eday = sprintf("%02d", $edate->day());
 
-	my $nfdump_command = "/usr/local/bin/nfdump -M /data/nfsen/profiles-data/live/upstream1  -T  -R ${syear}/${smonth}/${sday}/nfcapd.${syear}${smonth}${sday}0000:${eyear}/${emonth}/${eday}/nfcapd.${eyear}${emonth}${eday}2355 -n 100 -s ip/bytes -N -o csv -q | awk 'BEGIN { FS = \",\" } ; { if (NR > 1) print \$5, \$10 }'";
+	my $nfdump_command = "$NfConf::PREFIX/nfdump -M /data/nfsen/profiles-data/live/upstream1  -T  -R ${syear}/${smonth}/${sday}/nfcapd.${syear}${smonth}${sday}0000:${eyear}/${emonth}/${eday}/nfcapd.${eyear}${emonth}${eday}2355 -n 100 -s ip/bytes -N -o csv -q | awk 'BEGIN { FS = \",\" } ; { if (NR > 1) print \$5, \$10 }'";
 
 	my @nfdump_output = `$nfdump_command`;
 	syslog("info", Dumper(\@nfdump_output));
@@ -99,7 +95,7 @@ sub CreateGraph {
 			my $cyear = sprintf("%02d", $date_point->year());
 			my $cmonth = sprintf("%02d", $date_point->month());
 			my $cday = sprintf("%02d", $date_point->day());
-			my $nfdump_command = "/usr/local/bin/nfdump -M /data/nfsen/profiles-data/live/upstream1 -N -T  -R ${cyear}/${cmonth}/${cday}/nfcapd.${cyear}${cmonth}${cday}0000:${cyear}/${cmonth}/${cday}/nfcapd.${cyear}${cmonth}${cday}2355 -N -A dstip \"$ip_filter\"  -o csv |  awk 'BEGIN { FS = \",\" } ; {if( NR > 1)  s+=\$13 }; END {print s}'";
+			my $nfdump_command = "$NfConf::PREFIX/nfdump -M /data/nfsen/profiles-data/live/upstream1 -N -T  -R ${cyear}/${cmonth}/${cday}/nfcapd.${cyear}${cmonth}${cday}0000:${cyear}/${cmonth}/${cday}/nfcapd.${cyear}${cmonth}${cday}2355 -N -A dstip \"$ip_filter\"  -o csv |  awk 'BEGIN { FS = \",\" } ; {if( NR > 1)  s+=\$13 }; END {print s}'";
 			my $a_date_output = `$nfdump_command`;
 			$a_date_output = trim($a_date_output);
 			push @{$domain_to_array_of_bytes{$domain_name}}, "$a_date_output";
