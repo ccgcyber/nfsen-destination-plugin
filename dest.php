@@ -32,8 +32,8 @@ function dest_ParseInput( $plugin_id ) {
 	$opts = array();
 	$opts['start'] = $_POST["{$plugin_id}_start"];
 	$opts['end'] = $_POST["{$plugin_id}_end"];
-	$out_list = nfsend_query("dest::create_graph", $opts);
-	if(!$out_list) {
+	$graph_data_from_backend = nfsend_query("dest::create_graph", $opts);
+	if(!is_array($graph_data_from_backend)) {
 		SetMessage('error', "BackEnd returned null");
 		return;
 	}
@@ -93,11 +93,11 @@ function dest_ParseInput( $plugin_id ) {
                 }
             },";	
 	echo "series: [";
-	foreach ($out_list as $key => $value) {
+	foreach ($graph_data_from_backend as $key => $value) {
 		echo "{ name: '". $key . "', data: [";
 		echo join(", " , $value);
 		echo ']}';
-		if(!last($out_list, $key)) {
+		if(!last($graph_data_from_backend, $key)) {
 			echo ',';
 		}
 	}
