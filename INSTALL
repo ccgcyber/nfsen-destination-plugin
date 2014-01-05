@@ -1,0 +1,31 @@
+install dependencies:
+php -v >= 5.3.0
+
+perl plugins: (cpanminus is the apt-get for perl plugins):
+- DateTime (http://search.cpan.org/~drolsky/DateTime-1.06/lib/DateTime.pm )
+- StringUtils http://search.cpan.org/~miko/String-Util-1.21/lib/String/Util.pm
+
+Commands I ran to get the perl modules:
+sudo apt-get install cpanminus
+sudo cpanm  DateTime
+sudo cpanm String::Util
+
+
+copy dest.pm to nfsen/plugins/
+copy dest.php to the location of nfsen.php/../plugins/
+vim etc/nfsen.conf
+	- search for 'plugins'
+	- Add a new line looking like this:
+		     [ '*',     'dest' ],
+	- save and exit the file
+sudo service nfsen reload
+You have two options at this point:
+- just wait two plugin cycles for the plugin to be active
+- run the following command two times, one after another
+	/data/nfsen/bin/testPlugin -p dest -P live -t 201401031100
+	- The time slot at the end of the command just needs to be a valid timeslot. doesn't matter when
+- check /var/log/messages - the plugin will report that it is good to go 
+	(if the plugin is active, it will print this every 5 minutes)
+
+	
+
