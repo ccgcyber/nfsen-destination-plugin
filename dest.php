@@ -39,7 +39,7 @@ function dest_ParseInput( $plugin_id ) {
 		$all_dates = new DatePeriod( $start_date, new DateInterval('P1D'), $end_date );
 		$dates_in_str = array();
 		foreach ($all_dates as $a_date) {
-			array_push($dates_in_str, $a_date->format('Y-m-d'));
+			array_push($dates_in_str, str_replace(' ','',"'". $a_date->format('Y-m-d'))."'");
 		}
 		echo "
 			<script>
@@ -51,7 +51,7 @@ function dest_ParseInput( $plugin_id ) {
 			title: {
 				text: 'Top 10 domain destionations'						},
 			subtitle: {
-				text: 'Source: top 100 ip addresses'
+				text: 'Source: Top 100 ip addresses'
 			},
 			xAxis: {
 				categories: 	
