@@ -18,25 +18,26 @@ our % cmd_lookup = (
 
 
 sub CreateGraph {
-        my      $socket = shift;
-        my      $opts = shift;
+    my      $socket = shift;
+    my      $opts = shift;
        
 	my @start_date = split("-", $$opts{'start'});
 	my @end_date = split("-", $$opts{'end'});	
 
 	my $sdate = DateTime->new(
-		            year => @start_date[0],
-			       month => @start_date[1],
-				     day => @start_date[2],
+		            year => $start_date[0],
+			       month => $start_date[1],
+				     day => $start_date[2],
 			  time_zone  => 'floating',
 				 );
 
 	my $edate = DateTime->new(
-		            year => @end_date[0],
-			       month => @end_date[1],
-				     day => @end_date[2],
+		            year => $end_date[0],
+			       month => $end_date[1],
+				     day => $end_date[2],
 			  time_zone  => 'floating',
 	);
+	syslog("info", "Query ran from $sdate to $edate");
 	$edate->add(days=>1);
 	my @dates_of_interest;
 
@@ -46,8 +47,6 @@ sub CreateGraph {
 
 	$edate->subtract(days=>1);
 	
-	syslog("info", join(", ", @dates_of_interest));
-
 	my $syear = $sdate->year();
 	my $smonth = sprintf("%02d", $sdate->month());
 	my $sday = sprintf("%02d", $sdate->day());
@@ -55,10 +54,9 @@ sub CreateGraph {
 	my $emonth = sprintf("%02d", $edate->month());
 	my $eday = sprintf("%02d", $edate->day());
 
-	my $nfdump_command = "$NfConf::PREFIX/nfdump -M /data/nfsen/profiles-data/live/upstream1  -T  -R ${syear}/${smonth}/${sday}/nfcapd.${syear}${smonth}${sday}0000:${eyear}/${emonth}/${eday}/nfcapd.${eyear}${emonth}${eday}2355 -n 100 -s ip/bytes -N -o csv -q | awk 'BEGIN { FS = \",\" } ; { if (NR > 1) print \$5, \$10 }'";
-
+	my $read = trim(`cat /tmp/nfsen_dest_plugin_ipc.txt 2>/dev/null`);
+	my $nfdump_command = "$NfConf::PREFIX/nfdump -M $read  -T  -R ${syear}/${smonth}/${sday}/nfcapd.${syear}${smonth}${sday}0000:${eyear}/${emonth}/${eday}/nfcapd.${eyear}${emonth}${eday}2355 -n 100 -s ip/bytes -N -o csv -q | awk 'BEGIN { FS = \",\" } ; { if (NR > 1) print \$5, \$10 }'";
 	my @nfdump_output = `$nfdump_command`;
-	syslog("info", Dumper(\@nfdump_output));
 	my %domain_name_to_bytes;
 	my %domain_name_to_ip_addresses;
 
@@ -77,7 +75,7 @@ sub CreateGraph {
 			my @sub_domains = split(/\./, $host_name);
 			my $total_dots = scalar @sub_domains;
 			if($total_dots > 2) {
-				$host_name = @sub_domains[-2].".".@sub_domains[-1];
+				$host_name = $sub_domains[-2].".".$sub_domains[-1];
 			} 
 		}
 		push @{$domain_name_to_ip_addresses{$host_name}}, "dst ip " . $ip_address;
@@ -95,7 +93,7 @@ sub CreateGraph {
 			my $cyear = sprintf("%02d", $date_point->year());
 			my $cmonth = sprintf("%02d", $date_point->month());
 			my $cday = sprintf("%02d", $date_point->day());
-			my $nfdump_command = "$NfConf::PREFIX/nfdump -M /data/nfsen/profiles-data/live/upstream1 -N -T  -R ${cyear}/${cmonth}/${cday}/nfcapd.${cyear}${cmonth}${cday}0000:${cyear}/${cmonth}/${cday}/nfcapd.${cyear}${cmonth}${cday}2355 -N -A dstip \"$ip_filter\"  -o csv |  awk 'BEGIN { FS = \",\" } ; {if( NR > 1)  s+=\$13 }; END {print s}'";
+			my $nfdump_command = "$NfConf::PREFIX/nfdump -M $read -N -T  -R ${cyear}/${cmonth}/${cday}/nfcapd.${cyear}${cmonth}${cday}0000:${cyear}/${cmonth}/${cday}/nfcapd.${cyear}${cmonth}${cday}2355 -N -A dstip \"$ip_filter\"  -o csv |  awk 'BEGIN { FS = \",\" } ; {if( NR > 1)  s+=\$13 }; END {print s}'";
 			my $a_date_output = `$nfdump_command`;
 			$a_date_output = trim($a_date_output);
 			push @{$domain_to_array_of_bytes{$domain_name}}, "$a_date_output";
@@ -125,7 +123,6 @@ sub Init {
 ## The Cleanup function is called, when nfsend terminates. It's purpose is to give the
 ## plugin the possibility to cleanup itself. It's return value is discard.
 sub Cleanup {
-        syslog("info", "demoplugin Cleanup");
 }
 
 
@@ -140,6 +137,20 @@ sub run {
         my $profile      = $$argref{'profile'};
         my $profilegroup = $$argref{'profilegroup'};
         my $timeslot     = $$argref{'timeslot'};
+		my $profilepath     = NfProfile::ProfilePath($profile, $profilegroup);
+		my %profileinfo     = NfProfile::ReadProfile($profile, $profilegroup);
+		my $all_sources     = join ':', keys %{$profileinfo{'channel'}};
+		my $netflow_sources = "$NfConf::PROFILEDATADIR/$profilepath/$all_sources";
+
+		my $read = "";
+	   	$read = `cat /tmp/nfsen_dest_plugin_ipc.txt 2>/dev/null`;
+		$read = trim($read);
+		if($read eq $netflow_sources) {
+			syslog("info", "Destination plugin is good to go");
+		} else {
+			my $wrote = `echo "$netflow_sources" > /tmp/nfsen_dest_plugin_ipc.txt`;
+			syslog("info", "Destination plugin started setting up.");
+		}
 } # End of run
 
 
