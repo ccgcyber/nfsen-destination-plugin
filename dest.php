@@ -21,21 +21,24 @@ function last($array, $key) {
  * The return value is ignored.
  */
 function dest_ParseInput( $plugin_id ) {
-	$_SESSION['refresh'] = 0;
-	if(!isset($_POST["submit_start_end"] )) {
+	if(!isset($_POST["{$plugin_id}_submit_start_end"] )) {
 		return;
 	}
-
+	$_SESSION['refresh'] = 0;
 	print '
 		<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>	
 		<script src="http://code.highcharts.com/highcharts.js"></script>
 		<script src="http://code.highcharts.com/modules/exporting.js"></script>';
 	$opts = array();
-	$opts['start'] = $_POST['start'];
-	$opts['end'] = $_POST['end'];
+	$opts['start'] = $_POST["{$plugin_id}_start"];
+	$opts['end'] = $_POST["{$plugin_id}_end"];
 	$out_list = nfsend_query("dest::create_graph", $opts);
-	$start_date = DateTime::createFromFormat('Y-m-d|', $_POST['start']);
-	$end_date = DateTime::createFromFormat('Y-m-d|', $_POST['end']);
+	if(!$out_list) {
+		SetMessage('error', "BackEnd returned null");
+		return;
+	}
+	$start_date = DateTime::createFromFormat('Y-m-d|', $_POST["{$plugin_id}_start"]);
+	$end_date = DateTime::createFromFormat('Y-m-d|', $_POST["{$plugin_id}_end"]);
 	$end_date->add(new DateInterval("P1D"));
 	
 	$all_dates = new DatePeriod( $start_date, new DateInterval('P1D'), $end_date );
@@ -46,7 +49,7 @@ function dest_ParseInput( $plugin_id ) {
 	echo "
 	<script>
 		$(function () {
-			$('#dest_container').highcharts({
+			$('#{$plugin_id}_container').highcharts({
 			chart: {
 				type: 'area'
 			},
@@ -115,22 +118,18 @@ function dest_ParseInput( $plugin_id ) {
 function dest_Run( $plugin_id ) {
 	$start_date = '2014-01-02';
 	$end_date = '2014-01-03';
-	if(isset($_POST["submit_start_end"] )) {
-		$start_date = $_POST['start'];
-		$end_date = $_POST['end'];
+	if(isset($_POST["{$plugin_id}_submit_start_end"] )) {
+		$start_date = $_POST["{$plugin_id}_start"];
+		$end_date = $_POST["{$plugin_id}_end"];
 	} 
-	echo '
-		<form method="post" action="/nfsen/nfsen.php"  >
-		Start date: <input type="date" name="start" value="' 
-		. $start_date .	
-	'"/>
-	End date: <input type="date" name="end" value="' 
-	. $end_date .
-	'"  />
-		<input type="submit" name="submit_start_end" />
+	echo "
+		<form method=\"post\" action=\"/nfsen/nfsen.php\"  >
+		Start date: <input type=\"date\" name=\"{$plugin_id}_start\" value=\"{$start_date}\"/>
+	End date: <input type=\"date\" name=\"{$plugin_id}_end\" value=\"$end_date\"/>
+		<input type=\"submit\" name=\"{$plugin_id}_submit_start_end\" />
 		</form>
-		';
-	echo "<div id=\"dest_container\" style=\"min-width: 310px; height: 400px; margin: 0 auto\"></div>";
+		";
+	echo "<div id=\"{$plugin_id}_container\" style=\"min-width: 310px; height: 400px; margin: 0 auto\"></div>";
 
 
 } // End of dest_Run
