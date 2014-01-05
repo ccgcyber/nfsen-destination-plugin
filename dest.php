@@ -123,7 +123,7 @@ function dest_Run( $plugin_id ) {
 		$end_date = $_POST["{$plugin_id}_end"];
 	} 
 	echo "
-		<form method=\"post\" action=\"/nfsen/nfsen.php\"  >
+		<form method=\"post\"   >
 		Start date: <input type=\"date\" name=\"{$plugin_id}_start\" value=\"{$start_date}\"/>
 	End date: <input type=\"date\" name=\"{$plugin_id}_end\" value=\"$end_date\"/>
 		<input type=\"submit\" name=\"{$plugin_id}_submit_start_end\" />
