@@ -32,19 +32,18 @@ function dest_ParseInput( $plugin_id ) {
 	$opts = array();
 	$opts['start'] = $_POST["{$plugin_id}_start"];
 	$opts['end'] = $_POST["{$plugin_id}_end"];
+	$dates_from_backend = nfsend_query("dest::get_dates", $opts);
+
+	$dates_in_str = array();
+	for($i = 0; $i < count($dates_from_backend); $i++) {
+		$one = $dates_from_backend["$i"];
+		array_push($dates_in_str, "'$one'");		
+	}
+
 	$graph_data_from_backend = nfsend_query("dest::create_graph", $opts);
 	if(!is_array($graph_data_from_backend)) {
 		SetMessage('error', "BackEnd returned null");
 		return;
-	}
-	$start_date = DateTime::createFromFormat('Y-m-d|', $_POST["{$plugin_id}_start"]);
-	$end_date = DateTime::createFromFormat('Y-m-d|', $_POST["{$plugin_id}_end"]);
-	$end_date->add(new DateInterval("P1D"));
-	
-	$all_dates = new DatePeriod( $start_date, new DateInterval('P1D'), $end_date );
-	$dates_in_str = array();
-	foreach ($all_dates as $a_date) {
-		array_push($dates_in_str, str_replace(' ','',"'". $a_date->format('Y-m-d'))."'");
 	}
 	echo "
 	<script>

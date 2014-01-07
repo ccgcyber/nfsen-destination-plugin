@@ -14,8 +14,39 @@ our $VERSION = 100;
 
 our % cmd_lookup = (
 	"create_graph" => \&CreateGraph,
+	"get_dates" => \&GetDates
 );
 
+sub GetDates {
+	my $socket = shift;
+	my $opts = shift;
+
+	my @start_date = split("-", $$opts{'start'});
+	my @end_date = split("-", $$opts{'end'});	
+	my $sdate = DateTime->new(
+		            year => $start_date[0],
+			       month => $start_date[1],
+				     day => $start_date[2],
+			  time_zone  => 'floating',
+	 );
+
+	my $edate = DateTime->new(
+		            year => $end_date[0],
+			       month => $end_date[1],
+				     day => $end_date[2],
+			  time_zone  => 'floating',
+	);
+	$edate->add(days=>1);
+	my %dates_of_interest;
+	my $i = 0;
+	for(my $curr_date = $sdate->clone(); DateTime->compare($curr_date, $edate) == -1; $curr_date->add(days=>1)) {
+		my $curr_date_string = $curr_date->ymd;
+		$dates_of_interest{"$i"} = "$curr_date_string";
+		$i += 1;
+	}
+	syslog("info", Dumper(\%dates_of_interest));
+	Nfcomm::socket_send_ok ($socket, \%dates_of_interest);
+}
 
 sub CreateGraph {
     my      $socket = shift;
