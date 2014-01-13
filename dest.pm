@@ -98,16 +98,21 @@ sub CreateGraph {
 			next;
 		}
 		my $ip_address = trim($ip_address_and_freq[0]);
+		my @classes = split(/\./, $ip_address);
+		if ($classes[0] eq "10" or ($classes[0] eq "192" and $classes[1] eq "168") ) {
+			next;	
+		}
 		my $host_name = gethostbyaddr(inet_aton($ip_address), AF_INET);
 		my $frequency = trim($ip_address_and_freq[1]);
 		if (not defined $host_name or $host_name eq "") {
 			$host_name = $ip_address; 
 		} else {
 			my @sub_domains = split(/\./, $host_name);
-			my $total_dots = scalar @sub_domains;
-			if($total_dots > 2) {
-				$host_name = $sub_domains[-2].".".$sub_domains[-1];
+			my $total_dots = scalar @sub_domains - 1;
+			if($total_dots > 1) {
+				shift(@sub_domains);
 			} 
+			$host_name = join('.', @sub_domains);
 		}
 		push @{$domain_name_to_ip_addresses{$host_name}}, "dst ip " . $ip_address;
 		if(exists $domain_name_to_bytes{$host_name}) {
