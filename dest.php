@@ -121,13 +121,13 @@ function dest_Run( $plugin_id ) {
 		$start_date = $_POST["{$plugin_id}_start"];
 		$end_date = $_POST["{$plugin_id}_end"];
 	} 
-	echo "
+/**	echo "
 		<form method=\"post\"   >
 		Start date: <input type=\"date\" name=\"{$plugin_id}_start\" value=\"{$start_date}\"/>
 	End date: <input type=\"date\" name=\"{$plugin_id}_end\" value=\"$end_date\"/>
 		<input type=\"submit\" name=\"{$plugin_id}_submit_start_end\" />
 		</form>
-		";
+		";*/
 	echo "<div id=\"{$plugin_id}_container\" style=\"min-width: 310px; height: 400px; margin: 0 auto\"></div>";
 
 
