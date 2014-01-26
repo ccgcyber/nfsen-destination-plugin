@@ -1,4 +1,3 @@
-#
 package dest;
 
 use strict;
@@ -8,6 +7,7 @@ use Sys::Syslog;
 use Sys::Syslog qw(:standard :macros);
 use Data::Dumper;
 use DateTime;
+use Net::Subnet;
 use String::Util 'trim';
 
 our $VERSION = 100;
@@ -86,7 +86,7 @@ sub CreateGraph {
 	my $eday = sprintf("%02d", $edate->day());
 
 	my $netflow_sources = trim(`cat /tmp/nfsen_dest_plugin_ipc.txt 2>/dev/null`);
-	my $nfdump_command = "$NfConf::PREFIX/nfdump -M $netflow_sources  -T  -R ${syear}/${smonth}/${sday}/nfcapd.${syear}${smonth}${sday}0000:${eyear}/${emonth}/${eday}/nfcapd.${eyear}${emonth}${eday}2355 -n 100 -s ip/bytes -N -o csv -q | awk 'BEGIN { FS = \",\" } ; { if (NR > 1) print \$5, \$10 }'";
+	my $nfdump_command = "$NfConf::PREFIX/nfdump -M $netflow_sources  -T  -R ${syear}/${smonth}/${sday}/nfcapd.${syear}${smonth}${sday}0000:${eyear}/${emonth}/${eday}/nfcapd.${eyear}${emonth}${eday}2355 -n 100 -s dstip/bytes -N -o csv -q | awk 'BEGIN { FS = \",\" } ; { if (NR > 1) print \$5, \$10 }'";
 	my @nfdump_output = `$nfdump_command`;
 	my %domain_name_to_bytes;
 	my %domain_name_to_ip_addresses;
@@ -173,20 +173,66 @@ sub run {
         my $profile      = $$argref{'profile'};
         my $profilegroup = $$argref{'profilegroup'};
         my $timeslot     = $$argref{'timeslot'};
-		my $profilepath     = NfProfile::ProfilePath($profile, $profilegroup);
-		my %profileinfo     = NfProfile::ReadProfile($profile, $profilegroup);
-		my $all_sources     = join ':', keys %{$profileinfo{'channel'}};
-		my $netflow_sources = "$NfConf::PROFILEDATADIR/$profilepath/$all_sources";
+	my $profilepath     = NfProfile::ProfilePath($profile, $profilegroup);
+	my %profileinfo     = NfProfile::ReadProfile($profile, $profilegroup);
+	my $all_sources     = join ':', keys %{$profileinfo{'channel'}};
+	my $netflow_sources = "$NfConf::PROFILEDATADIR/$profilepath/$all_sources";
 
-		my $read = "";
-	   	$read = `cat /tmp/nfsen_dest_plugin_ipc.txt 2>/dev/null`;
-		$read = trim($read);
-		if($read eq $netflow_sources) {
-			syslog("info", "Destination plugin is good to go");
+	my $read = "";
+   	$read = `cat /tmp/nfsen_dest_plugin_ipc.txt 2>/dev/null`;
+	$read = trim($read);
+	if($read eq $netflow_sources) {
+		syslog("info", "Destination plugin is good to go");
+	} else {
+		my $wrote = `echo "$netflow_sources" > /tmp/nfsen_dest_plugin_ipc.txt`;
+		syslog("info", "Destination plugin started setting up.");
+	}
+
+	my $ignore_subnets = subnet_matcher qw(
+	        10.0.0.0/8
+	        172.16.0.0/12
+	        192.168.0.0/16
+		169.254.0.0/16
+		0.0.0.0/32
+    	);
+
+
+	my $year = substr $timeslot, 0, 4;
+	my $month = substr $timeslot, 4, 2;
+	my $day = substr $timeslot, 6, 2;
+
+	my $nfdump_command = "$NfConf::PREFIX/nfdump -M $netflow_sources  -T  -r ${year}/${month}/${day}/nfcapd.${timeslot} -n 300 -s dstip/bytes -N -o csv -q | awk 'BEGIN { FS = \",\" } ; { if (NR > 1) print \$5, \$10 }'";
+	my @nfdump_output = `$nfdump_command`;
+
+	my %domain_name_to_bytes;
+
+	foreach my $a_line (@nfdump_output) {
+		my @ip_address_and_freq = split(" ", $a_line);
+		my $arr_size = @ip_address_and_freq;
+		next if $arr_size != 2;
+
+		my $ip_address = trim($ip_address_and_freq[0]);
+		next if $ignore_subnets->("$ip_address");	
+
+		my $host_name = gethostbyaddr(inet_aton($ip_address), AF_INET);
+		my $frequency = trim($ip_address_and_freq[1]);
+		if (not defined $host_name or $host_name eq "") {
+			$host_name = $ip_address; 
 		} else {
-			my $wrote = `echo "$netflow_sources" > /tmp/nfsen_dest_plugin_ipc.txt`;
-			syslog("info", "Destination plugin started setting up.");
+			my @sub_domains = split(/\./, $host_name);
+			my $total_dots = scalar @sub_domains - 1;
+			if($total_dots > 1) {
+				shift(@sub_domains);
+			} 
+			$host_name = join('.', @sub_domains);
 		}
+		if(exists $domain_name_to_bytes{$host_name}) {
+			$domain_name_to_bytes{$host_name} += $frequency;
+		} else {
+			$domain_name_to_bytes{$host_name} = $frequency;
+		}
+	}
+
 } # End of run
 
 
