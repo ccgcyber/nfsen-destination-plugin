@@ -9,6 +9,8 @@ use Data::Dumper;
 use DateTime;
 use Net::Subnet;
 use String::Util 'trim';
+use DBI;
+use DateTime::Format::MySQL;
 
 our $VERSION = 100;
 
@@ -232,10 +234,15 @@ sub run {
 			$domain_name_to_bytes{$host_name} = $frequency;
 		}
 	}
+	my $dbh = DBI->connect('dbi:mysql:dest:localhost','dester','passwder')  or die "Connection Error: $DBI::errstr\n";
+
+	my $sql = 'INSERT INTO rrdgraph (timeslot,domain,frequency, addedon) VALUES (?,?,?,?)';
+	my $sth = $dbh->prepare($sql);
 	my $topNDomains = 10;
 	foreach my $domain_name (sort { $domain_name_to_bytes{$b} <=> $domain_name_to_bytes{$a} } keys %domain_name_to_bytes) {
 		my $domain_frequency = $domain_name_to_bytes{$domain_name};
-		syslog("info" , "$domain_name $domain_frequency");
+		my @new_row_values = ($timeslot, $domain_name, $domain_frequency, DateTime::Format::MySQL->format_datetime(DateTime->now));
+    		$sth->execute(@new_row_values);
 		last if --$topNDomains == 0;
 	}
 } # End of run
