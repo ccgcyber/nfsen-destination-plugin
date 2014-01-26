@@ -232,7 +232,12 @@ sub run {
 			$domain_name_to_bytes{$host_name} = $frequency;
 		}
 	}
-
+	my $topNDomains = 10;
+	foreach my $domain_name (sort { $domain_name_to_bytes{$b} <=> $domain_name_to_bytes{$a} } keys %domain_name_to_bytes) {
+		my $domain_frequency = $domain_name_to_bytes{$domain_name};
+		syslog("info" , "$domain_name $domain_frequency");
+		last if --$topNDomains == 0;
+	}
 } # End of run
 
 
