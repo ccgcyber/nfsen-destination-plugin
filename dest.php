@@ -141,7 +141,6 @@ function dest_ParseInput( $plugin_id ) {
 	if(!isset($_POST["{$plugin_id}_submit_start_end"] )) {
 		return;
 	}
-	$_SESSION['refresh'] = 0;
 	$opts = array();
 	$opts['start'] = $_POST["{$plugin_id}_start"];
 	$opts['end'] = $_POST["{$plugin_id}_end"];
