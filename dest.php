@@ -58,8 +58,9 @@ function dest_ParseInput( $plugin_id ) {
 	";
 	for ($x = 0; $x < mysql_num_rows($result); $x++){
 		$row = mysql_fetch_assoc($result);
-		$dates_to_index[$row['timeslot']] = $x;
-		 echo $row['timeslot']; 
+		$dtime = $row['timeslot'];
+		$dates_to_index[$dtime] = $x;
+		echo "'". substr($dtime, -4, 2) . ":". substr($dtime, -2) . "'"; 
 		if($x + 1 != mysql_num_rows($result)){
 			echo ", ";
 		}  
