@@ -195,7 +195,6 @@ sub run {
 	        172.16.0.0/12
 	        192.168.0.0/16
 		169.254.0.0/16
-		0.0.0.0/32
     	);
 
 
@@ -245,6 +244,12 @@ sub run {
     		$sth->execute(@new_row_values);
 		last if --$topNDomains == 0;
 	}
+	$sql = 'DELETE FROM rrdgraph WHERE addedon <= (? - INTERVAL 130 MINUTE)';
+	$sth = $dbh->prepare($sql);
+	my @current_time = (DateTime::Format::MySQL->format_datetime(DateTime->now));
+	$sth->execute(@current_time);
+	$dbh->commit;
+	$dbh->disconnect;
 } # End of run
 
 
