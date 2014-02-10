@@ -11,6 +11,9 @@ use Net::Subnet;
 use String::Util 'trim';
 use DBI;
 use DateTime::Format::MySQL;
+use Net::Whois::IP qw(whoisip_query);
+use Net::Patricia;
+
 
 our $VERSION = 100;
 
@@ -46,7 +49,6 @@ sub GetDates {
 		$dates_of_interest{"$i"} = "$curr_date_string";
 		$i += 1;
 	}
-	syslog("info", Dumper(\%dates_of_interest));
 	Nfcomm::socket_send_ok ($socket, \%dates_of_interest);
 }
 
@@ -140,7 +142,6 @@ sub CreateGraph {
 		last if $topNDomains == 0;
     }
 
-	syslog("info", Dumper(\%domain_to_array_of_bytes));
 	Nfcomm::socket_send_ok ($socket, \%domain_to_array_of_bytes);
 	return 1;
 }
@@ -163,6 +164,23 @@ sub Init {
 sub Cleanup {
 }
 
+sub getPatriciaFromDatabase {
+	my $trie = new Net::Patricia;
+	my $dbh = DBI->connect('dbi:mysql:dest:localhost','dester','passwder')  or die "Connection Error: $DBI::errstr\n";
+	my $sth = $dbh->prepare('SELECT cidr,org FROM whoiscache')
+                or die "Couldn't prepare statement: " . $dbh->errstr;
+	$sth->execute();
+	my @data;
+	 while (@data = $sth->fetchrow_array()) {
+            my $cidr = $data[0];
+            my $org = $data[1];
+	    $trie->add_string($cidr, $org);
+          }
+	$dbh->commit;
+	$dbh->disconnect;
+	return \$trie;
+}
+
 
 
 # Periodic data processing function
@@ -179,7 +197,9 @@ sub run {
 	my %profileinfo     = NfProfile::ReadProfile($profile, $profilegroup);
 	my $all_sources     = join ':', keys %{$profileinfo{'channel'}};
 	my $netflow_sources = "$NfConf::PROFILEDATADIR/$profilepath/$all_sources";
-
+	my $dbh = DBI->connect('dbi:mysql:dest:localhost','dester','passwder')  or die "Connection Error: $DBI::errstr\n";
+	my $trie = $ { getPatriciaFromDatabase() };
+	bless $trie, "Net::Patricia::AF_INET";
 	my $read = "";
    	$read = `cat /tmp/nfsen_dest_plugin_ipc.txt 2>/dev/null`;
 	$read = trim($read);
@@ -207,6 +227,10 @@ sub run {
 
 	my %domain_name_to_bytes;
 
+	my $sql = 'INSERT INTO whoiscache (cidr, org, added_on) VALUES (?,?,?)';
+	my $sth = $dbh->prepare($sql);
+	my $total_skipped = 0;
+
 	foreach my $a_line (@nfdump_output) {
 		my @ip_address_and_freq = split(" ", $a_line);
 		my $arr_size = @ip_address_and_freq;
@@ -216,6 +240,35 @@ sub run {
 		next if $ignore_subnets->("$ip_address");	
 
 		my $host_name = gethostbyaddr(inet_aton($ip_address), AF_INET);
+		my $org_name = $trie->match_string($ip_address);
+		if(not defined $org_name or $org_name eq "") {
+			my $search_options = ["CIDR","OrgName"];
+			my $response = whoisip_query($ip_address, "", $search_options);
+			my $cidr = $response->{"CIDR"};
+			my $org_name = $response->{"OrgName"};
+			$total_skipped += 1;
+			next if (
+				not defined $cidr or 
+				not defined $org_name or 
+				"" eq $cidr or
+				"" eq $org_name
+				 );
+			$total_skipped -= 1;
+			syslog("info", "ADDING: $cidr");
+			if (index($cidr, ',') != -1) {
+				my @all_cidrs = split("," , $cidr);
+				foreach my $a_cidr (@all_cidrs) {
+					$a_cidr = trim($a_cidr);
+					$trie->add_string("$a_cidr", "$org_name");
+					my @new_row_values = ($a_cidr, $org_name, DateTime::Format::MySQL->format_datetime(DateTime->now));
+    					$sth->execute(@new_row_values);
+				}
+			} else {
+				my @new_row_values = ($cidr, $org_name, DateTime::Format::MySQL->format_datetime(DateTime->now));
+    				$sth->execute(@new_row_values);
+				$trie->add_string("$cidr", "$org_name");	
+			}
+		} 
 		my $frequency = trim($ip_address_and_freq[1]);
 		if (not defined $host_name or $host_name eq "") {
 			$host_name = $ip_address; 
@@ -227,21 +280,23 @@ sub run {
 			} 
 			$host_name = join('.', @sub_domains);
 		}
+		$host_name = $org_name;
 		if(exists $domain_name_to_bytes{$host_name}) {
 			$domain_name_to_bytes{$host_name} += $frequency;
 		} else {
 			$domain_name_to_bytes{$host_name} = $frequency;
 		}
 	}
-	my $dbh = DBI->connect('dbi:mysql:dest:localhost','dester','passwder')  or die "Connection Error: $DBI::errstr\n";
 
-	my $sql = 'INSERT INTO rrdgraph (timeslot,domain,frequency, addedon) VALUES (?,?,?,?)';
-	my $sth = $dbh->prepare($sql);
+	syslog("info", "SKIPPED: $total_skipped");
+
+	my $sql_i = 'INSERT INTO rrdgraph (timeslot,domain,frequency, addedon) VALUES (?,?,?,?)';
+	my $sths = $dbh->prepare($sql_i);
 	my $topNDomains = 10;
 	foreach my $domain_name (sort { $domain_name_to_bytes{$b} <=> $domain_name_to_bytes{$a} } keys %domain_name_to_bytes) {
 		my $domain_frequency = $domain_name_to_bytes{$domain_name};
 		my @new_row_values = ($timeslot, $domain_name, $domain_frequency, DateTime::Format::MySQL->format_datetime(DateTime->now));
-    		$sth->execute(@new_row_values);
+    		$sths->execute(@new_row_values);
 		last if --$topNDomains == 0;
 	}
 	$sql = 'DELETE FROM rrdgraph WHERE addedon <= (? - INTERVAL 130 MINUTE)';
