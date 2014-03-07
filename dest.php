@@ -77,12 +77,12 @@ function dest_ParseInput( $plugin_id ) {
           },
                 labels: {
                     formatter: function() {
-                        return this.value / 1000000;
+                        return this.value / parseFloat(1000000);
                     }
                 }
             },
             tooltip: {
-                shared: true,
+                shared: false,
                 valueSuffix: ' MBs'
             },
             plotOptions: {
@@ -115,7 +115,7 @@ function dest_ParseInput( $plugin_id ) {
 		echo "{ name: '". $domain_name . "', data: [";
 		$current_date = array();
 		for($x = 0; $x < count($dates_to_index); $x++) {
-			$current_date[$x] = 0;
+			$current_date[$x] = "null";
 		}
 		$domain_query = "select timeslot, frequency from rrdgraph where domain='$domain_name'";
 		$domain_result=mysql_query($domain_query);	
