@@ -29,8 +29,25 @@ function dest_ParseInput( $plugin_id ) {
 	if (!$link) {
 		die('Could not connect: ' . mysql_error());
 	}
+	$graph_id = 0;
+	if(isset($_GET['1_graph'])) {
+		$graph_id = intval($_GET['1_graph']);
+	}
+	print "<!-- HERE: $graph_id -->";
+
+	$graph_id_to_table_name = array(
+		"tcp_flows", 
+		"tcp_packets" , 
+		"tcp_bytes", 
+		"udp_flows",
+		"udp_packets", 
+		"udp_bytes"
+	);
+
+	$table_name = $graph_id_to_table_name[$graph_id];
+	
 	mysql_select_db("dest");
-	$query = "select timeslot from rrdgraph group by timeslot order by timeslot;";
+	$query = "select timeslot from rrdgraph_$table_name group by timeslot order by timeslot;";
 	$result = mysql_query($query);
 
 	if (!$result) {
@@ -77,7 +94,7 @@ function dest_ParseInput( $plugin_id ) {
           },
                 labels: {
                     formatter: function() {
-                        return this.value / parseFloat(1000000);
+                        return this.value;
                     }
                 }
             },
@@ -98,7 +115,7 @@ function dest_ParseInput( $plugin_id ) {
             },";	
 	echo "series: [";
 	
-	$query = "select domain from rrdgraph group by domain;";
+	$query = "select domain from rrdgraph_$table_name group by domain;";
 	$result = mysql_query($query);
 
 	if (!$result) {
@@ -117,7 +134,7 @@ function dest_ParseInput( $plugin_id ) {
 		for($x = 0; $x < count($dates_to_index); $x++) {
 			$current_date[$x] = "null";
 		}
-		$domain_query = "select timeslot, frequency from rrdgraph where domain='$domain_name'";
+		$domain_query = "select timeslot, frequency from rrdgraph_$table_name where domain='$domain_name'";
 		$domain_result=mysql_query($domain_query);	
 		if (!$domain_result) {
    			$message  = 'Invalid query: ' . mysql_error() . "\n";
@@ -241,7 +258,143 @@ function dest_Run( $plugin_id ) {
 		</form>
 		";
 	echo "<div id=\"{$plugin_id}_container\" style=\"min-width: 310px; height: 400px; margin: 0 auto\"></div>";*/
-	echo "<div id=\"{$plugin_id}_moving_graph\" style=\"min-width: 310px; height: 400px; margin: 0 auto\"></div>";
+
+	echo <<< EOT
+<table style="text-align: left;" border="0" cellpadding="3" cellspacing="2">
+    <tbody>
+        <tr>
+            <td>
+                <table style="text-align: left;" border="0" cellpadding="0" cellspacing="3">
+                    <tbody>
+                        <tr>
+                            <td>TCP Packets</td>
+                            <td>TCP Bytes</td>
+                            <td>TCP Flows</td>
+                            <td>UDP Packets</td>
+                            <td>UDP Bytes</td>
+                            <td>UDP Flows</td>
+                        </tr>
+                        <tr>
+                            <td><a href='/toolkit/gui/nfsen/nfsen.php?1_graph=1'> <img src=rrdgraph.php?cmd=PortTracker::get-portgraph&profile=./live&arg=tcp+packets+0+0+1+1393553100+1394157900+139-445-80-443-88-8194-389-51910-5223-135+-+80 border='0' width='165' height='81' alt='tcp-packets'></a>
+
+                            </td>
+                            <td><a href='/toolkit/gui/nfsen/nfsen.php?1_graph=2'> <img src=rrdgraph.php?cmd=PortTracker::get-portgraph&profile=./live&arg=tcp+bytes+0+0+1+1393553100+1394157900+139-445-80-443-8530-88-8194-389-57184-51910+-+80 border='0' width='165' height='81' alt='tcp-bytes'></a>
+
+                            </td>
+                            <td><a href='/toolkit/gui/nfsen/nfsen.php?1_graph=0'> <img src=rrdgraph.php?cmd=PortTracker::get-portgraph&profile=./live&arg=tcp+flows+0+0+1+1393553100+1394157900+80-5223-443-445-88-8194-1179-5222-389-135+-+80 border='0' width='165' height='81' alt='tcp-flows'></a>
+
+                            </td>
+                            <td><a href='/toolkit/gui/nfsen/nfsen.php?1_graph=4'> <img src=rrdgraph.php?cmd=PortTracker::get-portgraph&profile=./live&arg=udp+packets+0+0+1+1393553100+1394157900+61724-137-47808-6343-1320-53-2008-162-61745-1812+-+80 border='0' width='165' height='81' alt='udp-packets'></a>
+
+                            </td>
+                            <td><a href='/toolkit/gui/nfsen/nfsen.php?1_graph=5'> <img src=rrdgraph.php?cmd=PortTracker::get-portgraph&profile=./live&arg=udp+bytes+0+0+1+1393553100+1394157900+6343-61724-1320-137-47808-88-53-1812-22610-138+-+80 border='0' width='165' height='81' alt='udp-bytes'></a>
+
+                            </td>
+                            <td><a href='/toolkit/gui/nfsen/nfsen.php?1_graph=3'> <img src=rrdgraph.php?cmd=PortTracker::get-portgraph&profile=./live&arg=udp+bytes+0+0+1+1393553100+1394157900+6343-61724-1320-137-47808-88-53-1812-22610-138+-+80 border='0' width='165' height='81' alt='udp-bytes'></a>
+
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td style="vertical-align: bottom;">
+                <table>
+                    <tr>
+                        <td>
+
+			    <div id="{$plugin_id}_moving_graph" style="min-width: 669px; height: 496px; margin: 0 auto"></div>
+                        </td>
+                        <td style="vertical-align: top;">
+                            <table>
+                                <tr>
+                                    <td>
+                                        <form action="/toolkit/gui/nfsen/nfsen.php" method="POST">Show Top&nbsp;
+                                            <select name='1_topN' onchange='this.form.submit();' size=1>
+                                                <option value='0'>0
+                                                    <option value='1'>1
+                                                        <option value='2'>2
+                                                            <option value='3'>3
+                                                                <option value='4'>4
+                                                                    <option value='5'>5
+                                                                        <option value='6'>6
+                                                                            <option value='7'>7
+                                                                                <option value='8'>8
+                                                                                    <option value='9'>9
+                                                                                        <option value='10' selected>10</select>Domains</form>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <form action="/toolkit/gui/nfsen/nfsen.php" method="POST">
+                                            <input type="radio" onClick='this.form.submit();' name='1_24avg' value="0" checked>now&nbsp;
+                                            <input type="radio" onClick='this.form.submit();' name='1_24avg' value="1">24 hours</td>
+                                    </form>
+                                </tr>
+                                <tr>
+                                    <td style='padding-top:20px;'>Track Domains:
+                                        <br>
+                                        <form action="/toolkit/gui/nfsen/nfsen.php" method="POST">
+                                            <select name='1_track' style='width:100%;padding-bottom:20px;' size=2></select>
+                                            <p>
+                                                <input type='text' name='1_trackport' value='' size='5' maxlength='5'>
+                                                <input type='submit' name='1_action' value='Add'>
+                                                <input type='submit' name='1_action' value='Delete'>
+                                        </form>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style='padding-top:20px;'>Skip Domains:
+                                        <br>
+                                        <form action="/toolkit/gui/nfsen/nfsen.php" method="POST">
+                                            <select name='1_skip' style='width:100%;padding-bottom:20px;' size=2>
+                                                <option value='80'>80</select>
+                                            <p>
+                                                <input type='text' name='1_skipport' value='' size='5' maxlength='5'>
+                                                <input type='submit' name='1_action' value='Add'>
+                                                <input type='submit' name='1_action' value='Delete'>
+                                        </form>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <!-- <tr>
+                        <td>
+                         <table style='width:100%;'>
+                                <tr>
+                                    <td style='padding-top:0px;'>
+                                        <form action="/toolkit/gui/nfsen/nfsen.php" method="POST" style="display:inline">Display
+                                            <select name='1_wsize' onchange='this.form.submit();' size=1>
+                                                <option value='0'>12 Hours</option>
+                                                <option value='1'>1 day</option>
+                                                <option value='2'>2 days</option>
+                                                <option value='3'>4 days</option>
+                                                <option value='4' selected>1 week</option>
+                                                <option value='5'>2 weeks</option>
+                                            </select>
+                                    </td>
+                                    <td>Y-axis:
+                                        <input type="radio" onClick='this.form.submit();' name='1_logscale' value="0" checked>Linear
+                                        <input type="radio" onClick='this.form.submit();' name='1_logscale' value="1">Log</td>
+                                    <td>Type:
+                                        <input type="radio" onClick='this.form.submit();' name='1_stacked' value="1">Stacked
+                                        <input type="radio" onClick='this.form.submit();' name='1_stacked' value="0" checked>Line</form>
+                                </tr>
+                            </table>
+                            </td>
+                            <td>
+                                <td></td>
+                    </tr>-->
+                </table>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+EOT;
+
 
 
 } // End of dest_Run
