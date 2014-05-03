@@ -18,13 +18,15 @@ vim etc/nfsen.conf
 	- Add a new line looking like this:
 		     [ '*',     'dest' ],
 	- save and exit the file
+create a user dester with password passwder in mysql and grant it all privilegse
+mysql -u root -p[root_password] dest < schemasetup.sql
 sudo service nfsen reload
 You have two options at this point:
-- just wait two plugin cycles for the plugin to be active
-- run the following command two times, one after another
+1. just wait two plugin cycles for the plugin to be active
+2. run the following command two times, one after another
 	/data/nfsen/bin/testPlugin -p dest -P live -t 201401031100
 	- The time slot at the end of the command just needs to be a valid timeslot. doesn't matter when
-- check /var/log/messages - the plugin will report that it is good to go 
+- check /var/log/messages - the plugin will repeatedly report that it is good to go 
 	(if the plugin is active, it will print this every 5 minutes)
 
 	

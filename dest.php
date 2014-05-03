@@ -267,32 +267,36 @@ function dest_Run( $plugin_id ) {
                 <table style="text-align: left;" border="0" cellpadding="0" cellspacing="3">
                     <tbody>
                         <tr>
-                            <td>TCP Packets</td>
-                            <td>TCP Bytes</td>
-                            <td>TCP Flows</td>
-                            <td>UDP Packets</td>
-                            <td>UDP Bytes</td>
-                            <td>UDP Flows</td>
-                        </tr>
-                        <tr>
-                            <td><a href='/toolkit/gui/nfsen/nfsen.php?1_graph=1'> <img src=rrdgraph.php?cmd=PortTracker::get-portgraph&profile=./live&arg=tcp+packets+0+0+1+1393553100+1394157900+139-445-80-443-88-8194-389-51910-5223-135+-+80 border='0' width='165' height='81' alt='tcp-packets'></a>
-
-                            </td>
-                            <td><a href='/toolkit/gui/nfsen/nfsen.php?1_graph=2'> <img src=rrdgraph.php?cmd=PortTracker::get-portgraph&profile=./live&arg=tcp+bytes+0+0+1+1393553100+1394157900+139-445-80-443-8530-88-8194-389-57184-51910+-+80 border='0' width='165' height='81' alt='tcp-bytes'></a>
-
-                            </td>
-                            <td><a href='/toolkit/gui/nfsen/nfsen.php?1_graph=0'> <img src=rrdgraph.php?cmd=PortTracker::get-portgraph&profile=./live&arg=tcp+flows+0+0+1+1393553100+1394157900+80-5223-443-445-88-8194-1179-5222-389-135+-+80 border='0' width='165' height='81' alt='tcp-flows'></a>
-
-                            </td>
-                            <td><a href='/toolkit/gui/nfsen/nfsen.php?1_graph=4'> <img src=rrdgraph.php?cmd=PortTracker::get-portgraph&profile=./live&arg=udp+packets+0+0+1+1393553100+1394157900+61724-137-47808-6343-1320-53-2008-162-61745-1812+-+80 border='0' width='165' height='81' alt='udp-packets'></a>
-
-                            </td>
-                            <td><a href='/toolkit/gui/nfsen/nfsen.php?1_graph=5'> <img src=rrdgraph.php?cmd=PortTracker::get-portgraph&profile=./live&arg=udp+bytes+0+0+1+1393553100+1394157900+6343-61724-1320-137-47808-88-53-1812-22610-138+-+80 border='0' width='165' height='81' alt='udp-bytes'></a>
-
-                            </td>
-                            <td><a href='/toolkit/gui/nfsen/nfsen.php?1_graph=3'> <img src=rrdgraph.php?cmd=PortTracker::get-portgraph&profile=./live&arg=udp+bytes+0+0+1+1393553100+1394157900+6343-61724-1320-137-47808-88-53-1812-22610-138+-+80 border='0' width='165' height='81' alt='udp-bytes'></a>
-
-                            </td>
+                            <td> 
+				<a href='/toolkit/gui/nfsen/nfsen.php?1_graph=1'>
+    					<input type="submit" value="TCP Packets">
+				</a>
+			    </td>
+                            <td> 
+				<a href='/toolkit/gui/nfsen/nfsen.php?1_graph=2'>
+    					<input type="submit" value="TCP Bytes">
+				</a>
+			    </td>
+                            <td> 
+				<a href='/toolkit/gui/nfsen/nfsen.php?1_graph=0'>
+    					<input type="button" value="TCP Flows">
+				</a>
+			    </td>
+                            <td> 
+				<a href='/toolkit/gui/nfsen/nfsen.php?1_graph=4'>
+    					<input type="button" value="UDP Packets">
+				</a>
+			    </td>
+                            <td> 
+				<a href='/toolkit/gui/nfsen/nfsen.php?1_graph=5'>
+    					<input type="button" value="UDP Bytes">
+				</a>
+			    </td>
+                            <td> 
+				<a href='/toolkit/gui/nfsen/nfsen.php?1_graph=3'>
+    					<input type="button" value="UDP Flows">
+				</a>
+			    </td>
                         </tr>
                     </tbody>
                 </table>
