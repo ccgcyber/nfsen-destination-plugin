@@ -312,6 +312,7 @@ function dest_Run( $plugin_id ) {
                         </td>
                         <td style="vertical-align: top;">
                             <table>
+				<!--
                                 <tr>
                                     <td>
                                         <form action="/toolkit/gui/nfsen/nfsen.php" method="POST">Show Top&nbsp;
@@ -360,7 +361,7 @@ function dest_Run( $plugin_id ) {
                                                 <input type='submit' name='1_action' value='Delete'>
                                         </form>
                                     </td>
-                                </tr>
+                                </tr> -->
                             </table>
                         </td>
                     </tr>
