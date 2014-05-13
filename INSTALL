@@ -18,9 +18,11 @@ vim etc/nfsen.conf
 	- Add a new line looking like this:
 		     [ '*',     'dest' ],
 	- save and exit the file
-create a user dester with password passwder in mysql and grant it all privilegse
-mysql -u root -p[root_password] dest < schemasetup.sql
-sudo service nfsen reload
+create a user dester with password passwder in mysql and grant it all privileges
+mysql> GRANT ALL ON dest.* TO dester@'localhost' IDENTIFIED BY 'passwder';
+
+$ mysql -u root -p[root_password] < schemasetup.sql
+$ sudo service nfsen reload
 You have two options at this point:
 1. just wait two plugin cycles for the plugin to be active
 2. run the following command two times, one after another
