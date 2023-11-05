@@ -22,7 +22,7 @@ function last($array, $key) {
  */
 function dest_ParseInput( $plugin_id ) {
 	print '
-		<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>	
+		<script src="/js/jquery-1.9.1.min.js"></script>	
 		<script src="http://code.highcharts.com/highcharts.js"></script>
 		<script src="http://code.highcharts.com/modules/exporting.js"></script>';
 	$link = mysql_connect('localhost', 'dester', 'passwder');
